@@ -1,35 +1,73 @@
 'use strict';
 
-const Constants = require('./src/util/Constants');
+require('dotenv').config();
 
-module.exports = {
-    Client: require('./src/Client'),
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const { loadConfig } = require('./lib/config');
+const { CsvOrderWriter } = require('./lib/csv');
+const { ProcessedMessagesStore } = require('./lib/processedMessages');
+const { OrderProcessor } = require('./lib/orderProcessor');
 
-    version: require('./package.json').version,
+async function main() {
+    const config = loadConfig(process.env);
+    const csvWriter = new CsvOrderWriter(config);
+    const processedMessages = new ProcessedMessagesStore(
+        config.processedMessagesPath,
+    );
+    await processedMessages.load();
 
-    // Structures
-    Chat: require('./src/structures/Chat'),
-    PrivateChat: require('./src/structures/PrivateChat'),
-    GroupChat: require('./src/structures/GroupChat'),
-    Channel: require('./src/structures/Channel'),
-    Message: require('./src/structures/Message'),
-    MessageMedia: require('./src/structures/MessageMedia'),
-    Contact: require('./src/structures/Contact'),
-    PrivateContact: require('./src/structures/PrivateContact'),
-    BusinessContact: require('./src/structures/BusinessContact'),
-    ClientInfo: require('./src/structures/ClientInfo'),
-    Location: require('./src/structures/Location'),
-    Poll: require('./src/structures/Poll'),
-    ScheduledEvent: require('./src/structures/ScheduledEvent'),
-    ProductMetadata: require('./src/structures/ProductMetadata'),
-    List: require('./src/structures/List'),
-    Buttons: require('./src/structures/Buttons'),
-    Broadcast: require('./src/structures/Broadcast'),
+    const orderProcessor = new OrderProcessor({
+        csvWriter,
+        processedMessages,
+        timezone: config.timezone,
+        logger: console,
+    });
 
-    // Auth Strategies
-    NoAuth: require('./src/authStrategies/NoAuth'),
-    LocalAuth: require('./src/authStrategies/LocalAuth'),
-    RemoteAuth: require('./src/authStrategies/RemoteAuth'),
+    const client = new Client({
+        authStrategy: new LocalAuth(),
+    });
 
-    ...Constants,
-};
+    let queue = Promise.resolve();
+
+    client.on('qr', (qr) => {
+        console.log('Scan this QR code in WhatsApp linked devices:');
+        try {
+            require('qrcode-terminal').generate(qr, { small: true });
+        } catch (error) {
+            console.error(
+                'Cannot render QR code. Run npm install to install qrcode-terminal.',
+            );
+        }
+    });
+
+    client.on('ready', () => {
+        console.log('WhatsApp client is ready.');
+    });
+
+    client.on('auth_failure', (message) => {
+        console.error('WhatsApp authentication failed:', message);
+    });
+
+    client.on('disconnected', (reason) => {
+        console.error('WhatsApp client disconnected:', reason);
+    });
+
+    client.on('message', (message) => {
+        queue = queue
+            .then(() => orderProcessor.handleMessage(message))
+            .catch((error) => {
+                console.error('Unexpected order processing error:', error);
+            });
+    });
+
+    await client.initialize();
+}
+
+if (require.main === module) {
+    main().catch((error) => {
+        console.error('Application startup failed:', error);
+        process.exitCode = 1;
+    });
+}
+
+module.exports = { main };

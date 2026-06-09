@@ -1,158 +1,77 @@
-<div align="center">
-    <p>
-        <a href="https://wwebjs.dev">
-            <img src="https://github.com/wwebjs/Assets/blob/main/Collection/GitHub/whatsapp-web.js.png?raw=true"
-                title="whatsapp-web.js" alt="WWebJS Website" />
-        </a>
-    </p>
-    <p>
-        <a href="https://www.npmjs.com/package/whatsapp-web.js"><img
-                src="https://img.shields.io/npm/v/whatsapp-web.js.svg" alt="npm" /></a>
-        <a href="https://www.npmjs.com/package/whatsapp-web.js"><img alt="NPM Downloads"
-                src="https://img.shields.io/npm/d18m/whatsapp-web.js" /></a>
-        <a href="https://github.com/wwebjs/whatsapp-web.js/graphs/contributors"><img alt="GitHub contributors"
-                src="https://img.shields.io/github/contributors-anon/wwebjs/whatsapp-web.js" /></a>
-        <a href="https://depfu.com/github/wwebjs/whatsapp-web.js?project_id=9765"><img
-                src="https://badges.depfu.com/badges/4a65a0de96ece65fdf39e294e0c8dcba/overview.svg" alt="Depfu" /></a>
-        <a href="https://discord.wwebjs.dev"><img
-                src="https://img.shields.io/discord/698610475432411196.svg?logo=discord" alt="Discord server" /></a>
-    </p>
-</div>
+# wa-order-parser
 
-## About
+`wa-order-parser` принимает корзины WhatsApp Business через WhatsApp Web и сохраняет товары в CSV-файл, который можно открыть в Excel или Google Sheets.
 
-whatsapp‑web.js is a powerful [Node.js][nodejs] library that lets you interact with WhatsApp Web, making it easy to build a dynamic WhatsApp API with nearly all features of the web client. It uses [Puppeteer][puppeteer] to access WhatsApp Web’s internal functions and runs them in a managed browser instance to reduce the risk of being blocked.
+## Требования
 
-## Links
+- Node.js 18 или выше.
+- WhatsApp Business на телефоне с доступом к связанным устройствам.
+- Для фонового запуска: `pm2`.
 
-- [GitHub][gitHub]
-- [Guide][guide] ([source][guide-source])
-- [Documentation][documentation] ([source][documentation-source])
-- [Discord Server][discord]
-- [npm][npm]
+`whatsapp-web.js` является неофициальной библиотекой WhatsApp. WhatsApp может ограничить или заблокировать номер при агрессивном использовании, массовых рассылках или подозрительной активности.
 
-## Installation
+## Установка
 
-**Node.js `v18.0.0` or higher, is required.**
-
-```sh
-npm install whatsapp-web.js
-yarn add whatsapp-web.js
-pnpm add whatsapp-web.js
+```bash
+npm install
 ```
 
-Having trouble installing? Take a peak at the [Guide][guide] for more detailed instructions.
+Создайте `.env` из примера:
 
-## Example usage
-
-```js
-const { Client } = require('whatsapp-web.js');
-const qrcode = require('qrcode-terminal');
-
-const client = new Client();
-
-client.on('qr', (qr) => {
-    qrcode.generate(qr, { small: true });
-});
-
-client.on('ready', () => {
-    console.log('Client is ready!');
-});
-
-client.on('message', (msg) => {
-    if (msg.body == '!ping') {
-        msg.reply('pong');
-    }
-});
-
-client.initialize();
+```bash
+cp .env.example .env
 ```
 
-Take a look at [example.js][examples] for additional examples and use cases.  
-For more details on saving and restoring sessions, check out the [Authentication Strategies][auth-strategies].
+Доступные настройки:
 
-## Supported features
+```env
+CSV_PATH=orders.csv
+CSV_DELIMITER=;
+TIMEZONE=Asia/Almaty
+PROCESSED_MESSAGES_PATH=processed-messages.json
+```
 
-| Feature                                          | Status                                       |
-| ------------------------------------------------ | -------------------------------------------- |
-| Multi Device                                     | ✅                                           |
-| Send messages                                    | ✅                                           |
-| Receive messages                                 | ✅                                           |
-| Send media (images/audio/documents)              | ✅                                           |
-| Send media (video)                               | ✅ [(requires Google Chrome)][google-chrome] |
-| Send stickers                                    | ✅                                           |
-| Receive media (images/audio/video/documents)     | ✅                                           |
-| Send contact cards                               | ✅                                           |
-| Send location                                    | ✅                                           |
-| Send buttons                                     | ❌ [(DEPRECATED)][deprecated-video]          |
-| Send lists                                       | ❌ [(DEPRECATED)][deprecated-video]          |
-| Receive location                                 | ✅                                           |
-| Message replies                                  | ✅                                           |
-| Join groups by invite                            | ✅                                           |
-| Get invite for group                             | ✅                                           |
-| Modify group info (subject, description)         | ✅                                           |
-| Modify group settings (send messages, edit info) | ✅                                           |
-| Add group participants                           | ✅                                           |
-| Kick group participants                          | ✅                                           |
-| Promote/demote group participants                | ✅                                           |
-| Mention users                                    | ✅                                           |
-| Mention groups                                   | ✅                                           |
-| Mute/unmute chats                                | ✅                                           |
-| Block/unblock contacts                           | ✅                                           |
-| Get contact info                                 | ✅                                           |
-| Get profile pictures                             | ✅                                           |
-| Set user status message                          | ✅                                           |
-| React to messages                                | ✅                                           |
-| Create polls                                     | ✅                                           |
-| Channels                                         | ✅                                           |
-| Vote in polls                                    | ✅                                           |
-| Communities                                      | 🔜                                           |
+Если `.env` отсутствует или часть параметров не задана, приложение использует эти значения по умолчанию.
 
-Something missing? Make an issue and let us know!
+## Первый запуск
 
-## Supporting the project
+```bash
+npm start
+```
 
-You can support the maintainer of this project through the links below:
+При первом запуске приложение покажет QR-код в терминале. Откройте WhatsApp Business на телефоне, перейдите в связанные устройства и отсканируйте QR-код.
 
-- [Support via GitHub Sponsors][gitHub-sponsors]
-- [Support via PayPal][support-payPal]
+После успешной авторизации сессия сохраняется в `.wwebjs_auth`. При следующем запуске QR-код обычно не потребуется, пока сессия остается валидной.
 
-## Contributing
+## Проверка заказов
 
-Feel free to open pull requests; we welcome contributions! However, for significant changes, it's best to open an issue beforehand. Make sure to review our [contribution guidelines][contributing] before creating a pull request. Before creating your own issue or pull request, always check to see if one already exists!
+Отправьте корзину на подключенный WhatsApp Business аккаунт. После обработки появится файл `orders.csv`.
 
-## Disclaimer
+CSV использует разделитель `;`, кодировку UTF-8 с BOM и заголовки:
 
-This project is not affiliated, associated, authorized, endorsed by, or in any way officially connected with WhatsApp or any of its subsidiaries or its affiliates. The official WhatsApp website can be found at [whatsapp.com][whatsapp]. "WhatsApp" as well as related names, marks, emblems and images are registered trademarks of their respective owners. Also it is not guaranteed you will not be blocked by using this method. WhatsApp does not allow bots or unofficial clients on their platform, so this shouldn't be considered totally safe.
+```csv
+Дата и время;Телефон;ID сообщения;Название товара;Количество;Цена;Валюта;Сумма позиции
+```
 
-## License
+Каждый товар из одной корзины записывается отдельной строкой. Повторная обработка одного и того же WhatsApp message ID не создает дубли.
 
-Copyright 2019 Pedro S Lopez
+## Запуск через pm2
 
-Licensed under the Apache License, Version 2.0 (the "License");  
-you may not use this project except in compliance with the License.  
-You may obtain a copy of the License at <https://www.apache.org/licenses/LICENSE-2.0>.
+```bash
+pm2 start index.js --name wa-order-parser
+pm2 save
+pm2 startup
+```
 
-Unless required by applicable law or agreed to in writing, software  
-distributed under the License is distributed on an "AS IS" BASIS,  
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
-See the License for the specific language governing permissions and  
-limitations under the License.
+Проверка процесса:
 
-[guide]: https://guide.wwebjs.dev/guide
-[guide-source]: https://github.com/wwebjs/wwebjs.dev/tree/main
-[documentation]: https://docs.wwebjs.dev/
-[documentation-source]: https://github.com/wwebjs/whatsapp-web.js/tree/main/docs
-[discord]: https://discord.wwebjs.dev
-[gitHub]: https://github.com/wwebjs/whatsapp-web.js
-[npm]: https://npmjs.org/package/whatsapp-web.js
-[nodejs]: https://nodejs.org/en/download/
-[examples]: https://github.com/wwebjs/whatsapp-web.js/blob/main/example.js
-[auth-strategies]: https://wwebjs.dev/guide/creating-your-bot/authentication.html
-[google-chrome]: https://wwebjs.dev/guide/creating-your-bot/handling-attachments.html#caveat-for-sending-videos-and-gifs
-[deprecated-video]: https://www.youtube.com/watch?v=hv1R1rLeVVE
-[gitHub-sponsors]: https://github.com/sponsors/wwebjs
-[support-payPal]: https://www.paypal.me/psla/
-[contributing]: .github/CONTRIBUTING.md
-[whatsapp]: https://whatsapp.com
-[puppeteer]: https://pptr.dev/
+```bash
+pm2 status wa-order-parser
+pm2 logs wa-order-parser
+```
+
+## Ограничения
+
+Приложение обрабатывает только новые входящие события во время работы процесса. Оно не читает историю чатов и не восстанавливает корзины, пришедшие в период, когда приложение было выключено.
+
+Обрабатываются только входящие `order`-сообщения из личных чатов. Собственные сообщения, групповые чаты, текст, медиа, реакции и звонки игнорируются.
