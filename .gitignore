@@ -60,7 +60,7 @@ typings/
 # Test sessions
 *session.json
 .wwebjs_auth/
-orders.csv
+
 processed-messages.json
 processed-messages.json.bak
 
