@@ -41,7 +41,8 @@ describe('csv', () => {
             ],
         ]);
 
-        const content = await fs.readFile(csvPath, 'utf8');
+        const dailyPath = writer.getDailyPath();
+        const content = await fs.readFile(dailyPath, 'utf8');
 
         expect(content.startsWith('\ufeff')).to.equal(true);
         expect(content.match(/Дата и время/g)).to.have.length(1);
