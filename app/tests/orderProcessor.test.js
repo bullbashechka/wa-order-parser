@@ -39,6 +39,7 @@ describe('order processor', () => {
             productToRow({
                 processedAt: '2026-06-09 12:00:00',
                 phone: '77001234567',
+                clientName: 'Иван',
                 messageId: 'msg-1',
                 product: {
                     name: '  Product name  ',
@@ -50,6 +51,7 @@ describe('order processor', () => {
         ).to.deep.equal([
             '2026-06-09 12:00:00',
             '77001234567',
+            'Иван',
             'msg-1',
             'Product name',
             2,
@@ -111,6 +113,26 @@ describe('order processor', () => {
         expect(processedMessages.add.calledOnceWithExactly('msg-1')).to.equal(
             true,
         );
+    });
+
+    it('captures the pushname into the client name column at receive time', async () => {
+        const csvWriter = { appendRows: sinon.stub().resolves() };
+        const processor = createProcessor({ csvWriter });
+        const message = {
+            type: 'order',
+            fromMe: false,
+            from: '77001234567@c.us',
+            id: { _serialized: 'msg-9' },
+            getOrder: sinon.stub().resolves({
+                products: [{ name: 'P', quantity: 1, price: '100' }],
+            }),
+            getContact: sinon.stub().resolves({ pushname: 'Пётр' }),
+        };
+
+        await processor.handleMessage(message);
+
+        const rows = csvWriter.appendRows.firstCall.args[0];
+        expect(rows[0][2]).to.equal('Пётр');
     });
 
     it('does not mark message as processed after CSV write failure', async () => {

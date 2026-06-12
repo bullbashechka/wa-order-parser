@@ -64,6 +64,11 @@ typings/
 processed-messages.json
 processed-messages.json.bak
 
+# app runtime artifacts
+app/data/
+app/.env
+*.bak
+
 # local version cache
 .wwebjs_cache/
 

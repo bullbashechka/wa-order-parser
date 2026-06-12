@@ -7,6 +7,7 @@ const { loadConfig } = require('./lib/config');
 const { CsvOrderWriter } = require('./lib/csv');
 const { ProcessedMessagesStore } = require('./lib/processedMessages');
 const { OrderProcessor } = require('./lib/orderProcessor');
+const { startScheduler } = require('./lib/scheduler');
 
 async function main() {
     const config = loadConfig(process.env);
@@ -23,8 +24,10 @@ async function main() {
         logger: console,
     });
 
+    startScheduler({ config, logger: console });
+
     const client = new Client({
-        authStrategy: new LocalAuth(),
+        authStrategy: new LocalAuth({ dataPath: config.authPath }),
     });
 
     let queue = Promise.resolve();

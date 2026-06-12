@@ -34,7 +34,27 @@ function calculateLineTotal(quantity, price) {
     return quantityNumber * priceNumber;
 }
 
-function productToRow({ processedAt, phone, messageId, product }) {
+// Best-effort sender display name captured at receive time. Stored raw in the CSV
+// so day documents can be built later without reconnecting to WhatsApp.
+async function resolveContactName(message) {
+    if (message && typeof message.getContact === 'function') {
+        try {
+            const contact = await message.getContact();
+            if (contact) {
+                const name =
+                    contact.pushname || contact.name || contact.shortName || '';
+                if (name) return String(name).trim();
+            }
+        } catch (error) {
+            // fall through to notifyName / empty
+        }
+    }
+
+    const notifyName = message && message._data && message._data.notifyName;
+    return notifyName ? String(notifyName).trim() : '';
+}
+
+function productToRow({ processedAt, phone, clientName, messageId, product }) {
     const quantity = isPresent(product.quantity) ? product.quantity : '';
     const price = isPresent(product.price) ? product.price : '';
     const currency = isPresent(product.currency) ? product.currency : '';
@@ -42,6 +62,7 @@ function productToRow({ processedAt, phone, messageId, product }) {
     return [
         processedAt,
         phone,
+        isPresent(clientName) ? String(clientName) : '',
         messageId,
         isPresent(product.name) ? String(product.name).trim() : '',
         quantity,
@@ -81,14 +102,15 @@ class OrderProcessor {
 
             const processedAt = formatDateTime(new Date(), this.timezone);
             const phone = cleanPhone(message.from);
+            const clientName = await resolveContactName(message);
             const rows = products.map((product) =>
-                productToRow({ processedAt, phone, messageId, product }),
+                productToRow({ processedAt, phone, clientName, messageId, product }),
             );
 
             await this.csvWriter.appendRows(rows);
             await this.processedMessages.add(messageId);
             this.logger.log(
-                `Order saved to CSV: ${messageId}, products: ${rows.length}`,
+                `Order saved to CSV: ${phone}, products: ${rows.length}`,
             );
             return true;
         } catch (error) {
@@ -113,4 +135,5 @@ module.exports = {
     getMessageId,
     isGroupChatId,
     productToRow,
+    resolveContactName,
 };
